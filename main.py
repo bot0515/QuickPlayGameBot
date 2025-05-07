@@ -208,6 +208,9 @@ def main():
         if not render_url:
             raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
         
+        # Pastikan render_url tak ada "https://" atau "http://"
+        render_url = render_url.replace("https://", "").replace("http://", "")
+        
         global bot, dp
         bot = Bot(TOKEN)  # Guna Bot untuk set webhook
         updater = Updater(TOKEN, use_context=True)
@@ -227,7 +230,11 @@ def main():
         # Set webhook dengan bot object
         webhook_url = f"https://{render_url}/webhook"
         print(f"Setting webhook to: {webhook_url}")
-        bot.setWebhook(url=webhook_url)
+        response = bot.setWebhook(url=webhook_url)
+        if not response:
+            print("Webhook setup failed")
+        else:
+            print("Webhook set successfully")
 
         updater.idle()
     except Exception as e:
