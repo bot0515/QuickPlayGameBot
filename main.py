@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher, CallbackQueryHandler
 from flask import Flask, request
 from threading import Thread
 import os
@@ -43,7 +43,7 @@ def start(update: Update, context: CallbackContext):
                      "/help - Lihat semua arahan")
         update.message.reply_text(help_text, parse_mode="Markdown")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # /play command (pilih permainan dengan butang)
 def play(update: Update, context: CallbackContext):
@@ -62,7 +62,7 @@ def play(update: Update, context: CallbackContext):
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
                                   reply_markup=reply_markup)
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # Semak jika bot admin
 def is_bot_admin(update: Update, context: CallbackContext) -> bool:
@@ -72,7 +72,7 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
             update.message.reply_text(
                 "Arahan ini hanya boleh digunakan dalam group atau channel.")
             return False
-        bot_member: ChatMember = context.bot.get_chat_member(
+        bot_member: ChatMember = context.bot.get_chat_dsp.get_chat_member(
             chat.id, context.bot.id)
         if bot_member.status not in ["administrator", "creator"]:
             update.message.reply_text(
@@ -80,7 +80,7 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
             return False
         return True
     except Exception as e:
-        update.message.reply_text(f"Error checking admin status: {e}")
+        update.message.reply_text("Ralat semasa memeriksa status admin.")
         return False
 
 # Mengemas kini mesej dalam kumpulan tentang siapa yang bermain
@@ -92,13 +92,13 @@ def update_playing_message(chat_id, game, context):
             players = players_playing_memory
 
         if players:
-            message = f"{', '.join(players)} is playing the {game} game!"
+            message = f"{', '.join(players)} sedang bermain permainan {game}!"
         else:
-            message = f"No one is playing the {game} game yet."
+            message = f"Tiada siapa sedang bermain permainan {game} lagi."
 
         context.bot.send_message(chat_id, message)
     except Exception as e:
-        print(f"Error updating playing message: {e}")
+        print(f"Ralat semasa mengemas kini mesej: {e}")
 
 # /snakegame command
 def snakegame(update: Update, context: CallbackContext):
@@ -109,22 +109,19 @@ def snakegame(update: Update, context: CallbackContext):
         user_name = update.message.from_user.full_name
         chat_id = update.message.chat_id
 
-        # Tambah nama pengguna jika belum ada dalam senarai pemain
-        if user_name not in players_playing_snake:
-            players_playing_snake.append(user_name)
+        # Simpan maklumat pengguna dalam context untuk callback
+        context.user_data['game'] = 'snake'
+        context.user_data['user_name'] = user_name
+        context.user_data['chat_id'] = chat_id
 
         keyboard = [[
-            InlineKeyboardButton("🐍 Main Snake Game",
-                                 url="https://breezy-narrow-busby.glitch.me")
+            InlineKeyboardButton("🐍 Sertai Snake Game", callback_data='join_snake')
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Klik di bawah untuk main Snake Game!",
+        update.message.reply_text("Klik butang di bawah untuk menyertai Snake Game!",
                                   reply_markup=reply_markup)
-
-        # Kemas kini mesej kumpulan selepas butang ditekan
-        update_playing_message(chat_id, "snake", context)
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # /memorymatch command
 def memorymatch(update: Update, context: CallbackContext):
@@ -135,23 +132,60 @@ def memorymatch(update: Update, context: CallbackContext):
         user_name = update.message.from_user.full_name
         chat_id = update.message.chat_id
 
-        # Tambah nama pengguna jika belum ada dalam senarai pemain
-        if user_name not in players_playing_memory:
-            players_playing_memory.append(user_name)
+        # Simpan maklumat pengguna dalam context untuk callback
+        context.user_data['game'] = 'memory'
+        context.user_data['user_name'] = user_name
+        context.user_data['chat_id'] = chat_id
 
         keyboard = [[
-            InlineKeyboardButton(
-                "🧠 Main Memory Match",
-                url="https://ten-important-velociraptor.glitch.me")
+            InlineKeyboardButton("🧠 Sertai Memory Match", callback_data='join_memory')
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Klik di bawah untuk main Memory Match!",
+        update.message.reply_text("Klik butang di bawah untuk menyertai Memory Match!",
                                   reply_markup=reply_markup)
-
-        # Kemas kini mesej kumpulan selepas butang ditekan
-        update_playing_message(chat_id, "memory", context)
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
+
+# Kendali callback dari butang
+def handle_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+
+    try:
+        game = context.user_data.get('game')
+        user_name = context.user_data.get('user_name')
+        chat_id = context.user_data.get('chat_id')
+
+        if not game or not user_name or not chat_id:
+            query.message.reply_text("Sesi tamat. Sila gunakan arahan /snakegame atau /memorymatch semula.")
+            return
+
+        if query.data == 'join_snake' and game == 'snake':
+            if user_name not in players_playing_snake:
+                players_playing_snake.append(user_name)
+            keyboard = [[
+                InlineKeyboardButton("🐍 Main Snake Game",
+                                    url="https://breezy-narrow-busby.glitch.me")
+            ]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.message.reply_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
+            update_playing_message(chat_id, "snake", context)
+
+        elif query.data == 'join_memory' and game == 'memory':
+            if user_name not in players_playing_memory:
+                players_playing_memory.append(user_name)
+            keyboard = [[
+                InlineKeyboardButton("🧠 Main Memory Match",
+                                    url="https://ten-important-velociraptor.glitch.me")
+            ]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.message.reply_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
+            update_playing_message(chat_id, "memory", context)
+
+        # Kosongkan user_data selepas diproses
+        context.user_data.clear()
+    except Exception as e:
+        query.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # /help command
 def help_command(update: Update, context: CallbackContext):
@@ -163,7 +197,7 @@ def help_command(update: Update, context: CallbackContext):
                      "/help - Lihat semua arahan")
         update.message.reply_text(help_text, parse_mode="Markdown")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # Respond bila orang mention bot
 def mention_reply(update: Update, context: CallbackContext):
@@ -195,7 +229,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 update.message.reply_text(
                     "Saya sedia membantu! Taip /help untuk lihat arahan yang ada.")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # Main
 def main():
@@ -212,7 +246,7 @@ def main():
         render_url = render_url.replace("https://", "").replace("http://", "")
         
         global bot, dp
-        bot = Bot(TOKEN)  # Guna Bot untuk set webhook
+        bot = Bot(TOKEN)
         updater = Updater(TOKEN, use_context=True)
         dp = updater.dispatcher
 
@@ -221,6 +255,7 @@ def main():
         dp.add_handler(CommandHandler("snakegame", snakegame))
         dp.add_handler(CommandHandler("memorymatch", memorymatch))
         dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(CallbackQueryHandler(handle_callback))
         dp.add_handler(
             MessageHandler(Filters.text & Filters.entity("mention"),
                            mention_reply))
