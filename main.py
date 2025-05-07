@@ -84,18 +84,18 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
         return False
 
 # Mengemas kini mesej dalam kumpulan tentang siapa yang bermain
-def update_playing_message(chat_id, game, context):
+def update_playing_message(chat_id, game, user_name, context):
     try:
         if game == "snake":
+            if user_name not in players_playing_snake:
+                players_playing_snake.append(user_name)
             players = players_playing_snake
         elif game == "memory":
+            if user_name not in players_playing_memory:
+                players_playing_memory.append(user_name)
             players = players_playing_memory
 
-        if players:
-            message = f"{', '.join(players)} sedang bermain permainan {game}!"
-        else:
-            message = f"Tiada siapa sedang bermain permainan {game} lagi."
-
+        message = f"{user_name} sedang bermain permainan {game}!"
         context.bot.send_message(chat_id, message)
     except Exception as e:
         print(f"Ralat semasa mengemas kini mesej: {e}")
@@ -161,26 +161,22 @@ def handle_callback(update: Update, context: CallbackContext):
             return
 
         if query.data == 'join_snake' and game == 'snake':
-            if user_name not in players_playing_snake:
-                players_playing_snake.append(user_name)
+            update_playing_message(chat_id, "snake", user_name, context)
             keyboard = [[
                 InlineKeyboardButton("🐍 Main Snake Game",
                                     url="https://t.me/QuickPlayGameBot/snakegame")
             ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            query.message.reply_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
-            update_playing_message(chat_id, "snake", context)
+            query.message.edit_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
 
         elif query.data == 'join_memory' and game == 'memory':
-            if user_name not in players_playing_memory:
-                players_playing_memory.append(user_name)
+            update_playing_message(chat_id, "memory", user_name, context)
             keyboard = [[
                 InlineKeyboardButton("🧠 Main Memory Match",
                                     url="https://t.me/QuickPlayGameBot/memorymatch")
             ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            query.message.reply_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
-            update_playing_message(chat_id, "memory", context)
+            query.message.edit_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
 
         # Kosongkan user_data selepas diproses
         context.user_data.clear()
