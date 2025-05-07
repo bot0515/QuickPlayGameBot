@@ -1,0 +1,202 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
+from flask import Flask
+from threading import Thread
+import os
+from telegram import ParseMode
+
+app = Flask('')
+
+# Senarai untuk menjejak pemain
+players_playing_snake = []
+players_playing_memory = []
+
+@app.route('/')
+def home():
+    return "Bot sedang berjalan."
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# /start command
+def start(update: Update, context: CallbackContext):
+    try:
+        keyboard = [[
+            InlineKeyboardButton(
+                "🎮 Memory Match",
+                url="https://ten-important-velociraptor.glitch.me")
+        ],
+                    [
+                        InlineKeyboardButton(
+                            "🐍 Snake Game",
+                            url="https://breezy-narrow-busby.glitch.me")
+                    ]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
+                                  reply_markup=reply_markup)
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# Semak jika bot admin
+def is_bot_admin(update: Update, context: CallbackContext) -> bool:
+    try:
+        chat = update.effective_chat
+        if chat.type not in ["group", "supergroup", "channel"]:
+            update.message.reply_text(
+                "Arahan ini hanya boleh digunakan dalam group atau channel.")
+            return False
+        bot_member: ChatMember = context.bot.get_chat_member(
+            chat.id, context.bot.id)
+        if bot_member.status not in ["administrator", "creator"]:
+            update.message.reply_text(
+                "Saya perlu menjadi admin dalam group ini untuk berfungsi.")
+            return False
+        return True
+    except Exception as e:
+        update.message.reply_text(f"Error checking admin status: {e}")
+        return False
+
+# Mengemas kini mesej dalam kumpulan tentang siapa yang bermain
+def update_playing_message(chat_id, game, context):
+    try:
+        if game == "snake":
+            players = players_playing_snake
+        elif game == "memory":
+            players = players_playing_memory
+
+        if players:
+            message = f"{', '.join(players)} is playing the {game} game!"
+        else:
+            message = f"No one is playing the {game} game yet."
+
+        context.bot.send_message(chat_id, message)
+    except Exception as e:
+        print(f"Error updating playing message: {e}")
+
+# /snakegame command
+def snakegame(update: Update, context: CallbackContext):
+    if not is_bot_admin(update, context):
+        return
+
+    try:
+        user_name = update.message.from_user.full_name
+        chat_id = update.message.chat_id
+
+        # Tambah nama pengguna jika belum ada dalam senarai pemain
+        if user_name not in players_playing_snake:
+            players_playing_snake.append(user_name)
+
+        keyboard = [[
+            InlineKeyboardButton("🐍 Main Snake Game",
+                                 url="https://breezy-narrow-busby.glitch.me")
+        ]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text("Klik di bawah untuk main Snake Game!",
+                                  reply_markup=reply_markup)
+
+        # Kemas kini mesej kumpulan selepas butang ditekan
+        update_playing_message(chat_id, "snake", context)
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# /memorymatch command
+def memorymatch(update: Update, context: CallbackContext):
+    if not is_bot_admin(update, context):
+        return
+
+    try:
+        user_name = update.message.from_user.full_name
+        chat_id = update.message.chat_id
+
+        # Tambah nama pengguna jika belum ada dalam senarai pemain
+        if user_name not in players_playing_memory:
+            players_playing_memory.append(user_name)
+
+        keyboard = [[
+            InlineKeyboardButton(
+                "🧠 Main Memory Match",
+                url="https://ten-important-velociraptor.glitch.me")
+        ]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text("Klik di bawah untuk main Memory Match!",
+                                  reply_markup=reply_markup)
+
+        # Kemas kini mesej kumpulan selepas butang ditekan
+        update_playing_message(chat_id, "memory", context)
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# /help command
+def help_command(update: Update, context: CallbackContext):
+    try:
+        help_text = ("📌 *Senarai Arahan Tersedia:*\n"
+                     "/start - Pilih game secara button\n"
+                     "/snakegame - Main Snake Game dalam group\n"
+                     "/memorymatch - Main Memory Match dalam group\n"
+                     "/help - Lihat semua arahan")
+        update.message.reply_text(help_text, parse_mode="Markdown")
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# Respond bila orang mention bot
+def mention_reply(update: Update, context: CallbackContext):
+    try:
+        text = update.message.text.lower()
+        bot_username = f"@{context.bot.username.lower()}"
+
+        if bot_username in text:
+            if "snake game" in text:
+                keyboard = [[
+                    InlineKeyboardButton(
+                        "🐍 Main Snake Game",
+                        url="https://breezy-narrow-busby.glitch.me")
+                ]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                update.message.reply_text("Klik di bawah untuk main Snake Game!",
+                                          reply_markup=reply_markup)
+
+            elif "memory match" in text:
+                keyboard = [[
+                    InlineKeyboardButton(
+                        "🧠 Main Memory Match",
+                        url="https://ten-important-velociraptor.glitch.me")
+                ]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                update.message.reply_text("Klik di bawah untuk main Memory Match!",
+                                          reply_markup=reply_markup)
+            else:
+                update.message.reply_text(
+                    "Saya sedia membantu! Taip /help untuk lihat arahan yang ada.")
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# Main
+def main():
+    try:
+        TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+        if not TOKEN:
+            raise ValueError("TELEGRAM_BOT_TOKEN tidak ditetapkan dalam environment variable")
+        
+        updater = Updater(TOKEN, use_context=True)
+        dp = updater.dispatcher
+
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("snakegame", snakegame))
+        dp.add_handler(CommandHandler("memorymatch", memorymatch))
+        dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(
+            MessageHandler(Filters.text & Filters.entity("mention"),
+                           mention_reply))
+
+        keep_alive()
+        updater.start_polling()
+        updater.idle()
+    except Exception as e:
+        print(f"Error in main: {e}")
+
+if __name__ == '__main__':
+    main()
