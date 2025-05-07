@@ -167,7 +167,7 @@ async def main():
         application.add_handler(CommandHandler("memorymatch", memorymatch))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(
-            MessageHandler(filters.TEXT & filters.MessageEntity("mention"), mention_reply))
+            MessageHandler(filters.TEXT & filters.Entity("mention"), mention_reply))
 
         keep_alive()
 
