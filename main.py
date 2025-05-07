@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, Filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from flask import Flask, request
 from threading import Thread
 import os
@@ -166,7 +166,7 @@ async def main():
         application.add_handler(CommandHandler("memorymatch", memorymatch))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(
-            MessageHandler(Filters.text & Filters.entity("mention"), mention_reply))
+            MessageHandler(filters.TEXT & filters.ENTITY("mention"), mention_reply))
 
         keep_alive()
 
