@@ -1,9 +1,9 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.constants import ParseMode
 from flask import Flask, request
 from threading import Thread
 import os
-from telegram import ParseMode
 
 app = Flask('')
 
@@ -35,7 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                      "/snakegame - Main Snake Game dalam group\n"
                      "/memorymatch - Main Memory Match dalam group\n"
                      "/help - Lihat semua arahan")
-        await update.message.reply_text(help_text, parse_mode="Markdown")
+        await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
@@ -112,7 +112,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                      "/snakegame - Main Snake Game dalam group\n"
                      "/memorymatch - Main Memory Match dalam group\n"
                      "/help - Lihat semua arahan")
-        await update.message.reply_text(help_text, parse_mode="Markdown")
+        await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
