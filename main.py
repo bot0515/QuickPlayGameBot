@@ -54,7 +54,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             url=f"https://t.me/QuickPlayGameBot/snakegame?username={username}")
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        awaited update.message.reply_text("Pilih permainan yang anda mahu mainkan:", reply_markup=reply_markup)
+        await update.message.reply_text("Pilih permainan yang anda mahu mainkan:", reply_markup=reply_markup)
     except Exception as e:
         await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
@@ -153,7 +153,8 @@ async def main():
 
         render_url = os.environ.get("RENDER_EXTERNAL_URL")
         if not render_url:
-            raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment.classList.add
+            raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
+
         render_url = render_url.replace("https://", "").replace("http://", "")
 
         global application
