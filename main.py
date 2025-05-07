@@ -3,7 +3,7 @@ from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandle
 from flask import Flask, request
 from threading import Thread
 import os
-from telegram import ParseMode
+from telegram import ParseMode, WebAppInfo
 from telegram import Bot
 
 app = Flask('')
@@ -58,6 +58,17 @@ def play(update: Update, context: CallbackContext):
                             "🐍 Snake Game",
                             url="https://t.me/QuickPlayGameBot/snakegame")
                     ]]
+        # Pilihan untuk pautan laman web asal (nyahkomen jika perlu)
+        # keyboard = [[
+        #     InlineKeyboardButton(
+        #         "🎮 Memory Match",
+        #         url="https://ten-important-velociraptor.glitch.me")
+        # ],
+        #             [
+        #                 InlineKeyboardButton(
+        #                     "🐍 Snake Game",
+        #                     url="https://breezy-narrow-busby.glitch.me")
+        #             ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
                                   reply_markup=reply_markup)
@@ -72,7 +83,7 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
             update.message.reply_text(
                 "Arahan ini hanya boleh digunakan dalam group atau channel.")
             return False
-        bot_member: ChatMember = context.bot.get_chat_dsp.get_chat_member(
+        bot_member: ChatMember = context.bot.get_chat_member(
             chat.id, context.bot.id)
         if bot_member.status not in ["administrator", "creator"]:
             update.message.reply_text(
@@ -80,7 +91,7 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
             return False
         return True
     except Exception as e:
-        update.message.reply_text("Ralat semasa memeriksa status admin.")
+        update.message.reply_text("Ralat semasa memeriksa status admin. Sila pastikan bot mempunyai kebenaran yang diperlukan.")
         return False
 
 # Mengemas kini mesej dalam kumpulan tentang siapa yang bermain
@@ -117,6 +128,11 @@ def snakegame(update: Update, context: CallbackContext):
         keyboard = [[
             InlineKeyboardButton("🐍 Sertai Snake Game", callback_data='join_snake')
         ]]
+        # Pilihan untuk Web App (nyahkomen jika permainan menyokong Telegram Web Apps)
+        # keyboard = [[
+        #     InlineKeyboardButton("🐍 Main Snake Game",
+        #                         web_app=WebAppInfo(url="https://breezy-narrow-busby.glitch.me"))
+        # ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik butang di bawah untuk menyertai Snake Game!",
                                   reply_markup=reply_markup)
@@ -140,6 +156,11 @@ def memorymatch(update: Update, context: CallbackContext):
         keyboard = [[
             InlineKeyboardButton("🧠 Sertai Memory Match", callback_data='join_memory')
         ]]
+        # Pilihan untuk Web App (nyahkomen jika permainan menyokong Telegram Web Apps)
+        # keyboard = [[
+        #     InlineKeyboardButton("🧠 Main Memory Match",
+        #                         web_app=WebAppInfo(url="https://ten-important-velociraptor.glitch.me"))
+        # ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik butang di bawah untuk menyertai Memory Match!",
                                   reply_markup=reply_markup)
@@ -167,6 +188,11 @@ def handle_callback(update: Update, context: CallbackContext):
                 InlineKeyboardButton("🐍 Main Snake Game",
                                     url="https://t.me/QuickPlayGameBot/snakegame")
             ]]
+            # Pilihan untuk pautan laman web asal (nyahkomen jika perlu)
+            # keyboard = [[
+            #     InlineKeyboardButton("🐍 Main Snake Game",
+            #                         url="https://breezy-narrow-busby.glitch.me")
+            # ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.message.reply_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
             update_playing_message(chat_id, "snake", context)
@@ -178,6 +204,11 @@ def handle_callback(update: Update, context: CallbackContext):
                 InlineKeyboardButton("🧠 Main Memory Match",
                                     url="https://t.me/QuickPlayGameBot/memorymatch")
             ]]
+            # Pilihan untuk pautan laman web asal (nyahkomen jika perlu)
+            # keyboard = [[
+            #     InlineKeyboardButton("🧠 Main Memory Match",
+            #                         url="https://ten-important-velociraptor.glitch.me")
+            # ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.message.reply_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
             update_playing_message(chat_id, "memory", context)
