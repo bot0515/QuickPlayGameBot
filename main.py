@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
-from flask import Flask
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher
+from flask import Flask, request
 from threading import Thread
 import os
 from telegram import ParseMode
@@ -15,15 +15,33 @@ players_playing_memory = []
 def home():
     return "Bot sedang berjalan."
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(), bot)
+    dp.process_update(update)
+    return "OK"
+
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
 
 def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# /start command
+# /start command (paparkan senarai arahan)
 def start(update: Update, context: CallbackContext):
+    try:
+        help_text = ("📌 *Senarai Arahan Tersedia:*\n"
+                     "/play - Pilih game secara button\n"
+                     "/snakegame - Main Snake Game dalam group\n"
+                     "/memorymatch - Main Memory Match dalam group\n"
+                     "/help - Lihat semua arahan")
+        update.message.reply_text(help_text, parse_mode="Markdown")
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
+
+# /play command (pilih permainan dengan butang)
+def play(update: Update, context: CallbackContext):
     try:
         keyboard = [[
             InlineKeyboardButton(
@@ -134,7 +152,7 @@ def memorymatch(update: Update, context: CallbackContext):
 def help_command(update: Update, context: CallbackContext):
     try:
         help_text = ("📌 *Senarai Arahan Tersedia:*\n"
-                     "/start - Pilih game secara button\n"
+                     "/play - Pilih game secara button\n"
                      "/snakegame - Main Snake Game dalam group\n"
                      "/memorymatch - Main Memory Match dalam group\n"
                      "/help - Lihat semua arahan")
@@ -181,10 +199,12 @@ def main():
         if not TOKEN:
             raise ValueError("TELEGRAM_BOT_TOKEN tidak ditetapkan dalam environment variable")
         
-        updater = Updater(TOKEN, use_context=True)
-        dp = updater.dispatcher
+        global bot, dp
+        bot = Updater(TOKEN, use_context=True)
+        dp = bot.dispatcher
 
         dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("play", play))
         dp.add_handler(CommandHandler("snakegame", snakegame))
         dp.add_handler(CommandHandler("memorymatch", memorymatch))
         dp.add_handler(CommandHandler("help", help_command))
@@ -193,8 +213,13 @@ def main():
                            mention_reply))
 
         keep_alive()
-        updater.start_polling()
-        updater.idle()
+
+        # Set webhook
+        webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_URL')}/webhook"
+        bot.set_webhook(url=webhook_url)
+
+        # Jangan guna start_polling()
+        bot.idle()
     except Exception as e:
         print(f"Error in main: {e}")
 
