@@ -1,5 +1,5 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher, CallbackQueryHandler
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, WebAppInfo
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher
 from flask import Flask, request
 from threading import Thread
 import os
@@ -47,12 +47,12 @@ def play(update: Update, context: CallbackContext):
         keyboard = [[
             InlineKeyboardButton(
                 "🎮 Memory Match",
-                url="https://t.me/QuickPlayGameBot/memorymatch")
+                web_app=WebAppInfo(url="https://ten-important-velociraptor.glitch.me"))
         ],
                     [
                         InlineKeyboardButton(
                             "🐍 Snake Game",
-                            url="https://t.me/QuickPlayGameBot/snakegame")
+                            web_app=WebAppInfo(url="https://breezy-narrow-busby.glitch.me"))
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
@@ -87,7 +87,7 @@ def snakegame(update: Update, context: CallbackContext):
     try:
         keyboard = [[
             InlineKeyboardButton("🐍 Main Snake Game",
-                                url="https://t.me/QuickPlayGameBot/snakegame")
+                                web_app=WebAppInfo(url="https://breezy-narrow-busby.glitch.me"))
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Snake Game!",
@@ -103,7 +103,7 @@ def memorymatch(update: Update, context: CallbackContext):
     try:
         keyboard = [[
             InlineKeyboardButton("🧠 Main Memory Match",
-                                url="https://t.me/QuickPlayGameBot/memorymatch")
+                                web_app=WebAppInfo(url="https://ten-important-velociraptor.glitch.me"))
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Memory Match!",
@@ -134,7 +134,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🐍 Main Snake Game",
-                        url="https://t.me/QuickPlayGameBot/snakegame")
+                        web_app=WebAppInfo(url="https://breezy-narrow-busby.glitch.me"))
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Snake Game!",
@@ -144,7 +144,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🧠 Main Memory Match",
-                        url="https://t.me/QuickPlayGameBot/memorymatch")
+                        web_app=WebAppInfo(url="https://ten-important-velociraptor.glitch.me"))
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Memory Match!",
@@ -165,10 +165,9 @@ def main():
         render_url = os.environ.get("RENDER_EXTERNAL_URL")
         if not render_url:
             raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
-        
-        # Pastikan render_url tak ada "https://" atau "http://"
+
         render_url = render_url.replace("https://", "").replace("http://", "")
-        
+
         global bot, dp
         bot = Bot(TOKEN)
         updater = Updater(TOKEN, use_context=True)
@@ -185,7 +184,6 @@ def main():
 
         keep_alive()
 
-        # Set webhook dengan bot object
         webhook_url = f"https://{render_url}/webhook"
         print(f"Setting webhook to: {webhook_url}")
         response = bot.setWebhook(url=webhook_url)
