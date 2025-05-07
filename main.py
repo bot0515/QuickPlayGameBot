@@ -51,12 +51,12 @@ def play(update: Update, context: CallbackContext):
         keyboard = [[
             InlineKeyboardButton(
                 "🎮 Memory Match",
-                url="https://ten-important-velociraptor.glitch.me")
+                url="https://t.me/QuickPlayGameBot/memorymatch")
         ],
                     [
                         InlineKeyboardButton(
                             "🐍 Snake Game",
-                            url="https://breezy-narrow-busby.glitch.me")
+                            url="https://t.me/QuickPlayGameBot/snakegame")
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
@@ -165,7 +165,7 @@ def handle_callback(update: Update, context: CallbackContext):
                 players_playing_snake.append(user_name)
             keyboard = [[
                 InlineKeyboardButton("🐍 Main Snake Game",
-                                    url="https://breezy-narrow-busby.glitch.me")
+                                    url="https://t.me/QuickPlayGameBot/snakegame")
             ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.message.reply_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
@@ -176,7 +176,7 @@ def handle_callback(update: Update, context: CallbackContext):
                 players_playing_memory.append(user_name)
             keyboard = [[
                 InlineKeyboardButton("🧠 Main Memory Match",
-                                    url="https://ten-important-velociraptor.glitch.me")
+                                    url="https://t.me/QuickPlayGameBot/memorymatch")
             ]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.message.reply_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
@@ -210,7 +210,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🐍 Main Snake Game",
-                        url="https://breezy-narrow-busby.glitch.me")
+                        url="https://t.me/QuickPlayGameBot/snakegame")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Snake Game!",
@@ -220,7 +220,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🧠 Main Memory Match",
-                        url="https://ten-important-velociraptor.glitch.me")
+                        url="https://t.me/QuickPlayGameBot/memorymatch")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Memory Match!",
