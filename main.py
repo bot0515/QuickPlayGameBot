@@ -17,9 +17,13 @@ def home():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    update = Update.de_json(request.get_json(), bot)
-    dp.process_update(update)
-    return "OK"
+    try:
+        update = Update.de_json(request.get_json(), bot)
+        dp.process_update(update)
+        return "OK"
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return "Error", 500
 
 def run():
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
@@ -198,6 +202,10 @@ def main():
         TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
         if not TOKEN:
             raise ValueError("TELEGRAM_BOT_TOKEN tidak ditetapkan dalam environment variable")
+
+        render_url = os.environ.get("RENDER_EXTERNAL_URL")
+        if not render_url:
+            raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
         
         global bot, dp
         bot = Updater(TOKEN, use_context=True)
@@ -215,10 +223,10 @@ def main():
         keep_alive()
 
         # Set webhook
-        webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_URL')}/webhook"
+        webhook_url = f"https://{render_url}/webhook"
+        print(f"Setting webhook to: {webhook_url}")
         bot.set_webhook(url=webhook_url)
 
-        # Jangan guna start_polling()
         bot.idle()
     except Exception as e:
         print(f"Error in main: {e}")
