@@ -22,7 +22,8 @@ def webhook():
         return "Error", 500
 
 def run():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
@@ -166,7 +167,7 @@ async def main():
         application.add_handler(CommandHandler("memorymatch", memorymatch))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(
-            MessageHandler(filters.TEXT & filters.ENTITY("mention"), mention_reply))
+            MessageHandler(filters.TEXT & filters.MessageEntity("mention"), mention_reply))
 
         keep_alive()
 
