@@ -4,6 +4,7 @@ from flask import Flask, request
 from threading import Thread
 import os
 from telegram import ParseMode
+from telegram import Bot
 
 app = Flask('')
 
@@ -208,8 +209,9 @@ def main():
             raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
         
         global bot, dp
-        bot = Updater(TOKEN, use_context=True)
-        dp = bot.dispatcher
+        bot = Bot(TOKEN)  # Guna Bot untuk set webhook
+        updater = Updater(TOKEN, use_context=True)
+        dp = updater.dispatcher
 
         dp.add_handler(CommandHandler("start", start))
         dp.add_handler(CommandHandler("play", play))
@@ -222,12 +224,12 @@ def main():
 
         keep_alive()
 
-        # Set webhook
+        # Set webhook dengan bot object
         webhook_url = f"https://{render_url}/webhook"
         print(f"Setting webhook to: {webhook_url}")
-        bot.set_webhook(url=webhook_url)
+        bot.setWebhook(url=webhook_url)
 
-        bot.idle()
+        updater.idle()
     except Exception as e:
         print(f"Error in main: {e}")
 
