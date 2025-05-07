@@ -8,10 +8,6 @@ from telegram import Bot
 
 app = Flask('')
 
-# Senarai untuk menjejak pemain
-players_playing_snake = []
-players_playing_memory = []
-
 @app.route('/')
 def home():
     return "Bot sedang berjalan."
@@ -83,42 +79,18 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
         update.message.reply_text("Ralat semasa memeriksa status admin. Sila pastikan bot mempunyai kebenaran yang diperlukan.")
         return False
 
-# Mengemas kini mesej dalam kumpulan tentang siapa yang bermain
-def update_playing_message(chat_id, game, user_name, context):
-    try:
-        if game == "snake":
-            if user_name not in players_playing_snake:
-                players_playing_snake.append(user_name)
-            players = players_playing_snake
-        elif game == "memory":
-            if user_name not in players_playing_memory:
-                players_playing_memory.append(user_name)
-            players = players_playing_memory
-
-        message = f"{user_name} sedang bermain permainan {game}!"
-        context.bot.send_message(chat_id, message)
-    except Exception as e:
-        print(f"Ralat semasa mengemas kini mesej: {e}")
-
 # /snakegame command
 def snakegame(update: Update, context: CallbackContext):
     if not is_bot_admin(update, context):
         return
 
     try:
-        user_name = update.message.from_user.full_name
-        chat_id = update.message.chat_id
-
-        # Simpan maklumat pengguna dalam context untuk callback
-        context.user_data['game'] = 'snake'
-        context.user_data['user_name'] = user_name
-        context.user_data['chat_id'] = chat_id
-
         keyboard = [[
-            InlineKeyboardButton("🐍 Sertai Snake Game", callback_data='join_snake')
+            InlineKeyboardButton("🐍 Main Snake Game",
+                                url="https://t.me/QuickPlayGameBot/snakegame")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Klik butang di bawah untuk menyertai Snake Game!",
+        update.message.reply_text("Klik untuk bermain Snake Game!",
                                   reply_markup=reply_markup)
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
@@ -129,59 +101,15 @@ def memorymatch(update: Update, context: CallbackContext):
         return
 
     try:
-        user_name = update.message.from_user.full_name
-        chat_id = update.message.chat_id
-
-        # Simpan maklumat pengguna dalam context untuk callback
-        context.user_data['game'] = 'memory'
-        context.user_data['user_name'] = user_name
-        context.user_data['chat_id'] = chat_id
-
         keyboard = [[
-            InlineKeyboardButton("🧠 Sertai Memory Match", callback_data='join_memory')
+            InlineKeyboardButton("🧠 Main Memory Match",
+                                url="https://t.me/QuickPlayGameBot/memorymatch")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Klik butang di bawah untuk menyertai Memory Match!",
+        update.message.reply_text("Klik untuk bermain Memory Match!",
                                   reply_markup=reply_markup)
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-# Kendali callback dari butang
-def handle_callback(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-
-    try:
-        game = context.user_data.get('game')
-        user_name = context.user_data.get('user_name')
-        chat_id = context.user_data.get('chat_id')
-
-        if not game or not user_name or not chat_id:
-            query.message.reply_text("Sesi tamat. Sila gunakan arahan /snakegame atau /memorymatch semula.")
-            return
-
-        if query.data == 'join_snake' and game == 'snake':
-            update_playing_message(chat_id, "snake", user_name, context)
-            keyboard = [[
-                InlineKeyboardButton("🐍 Main Snake Game",
-                                    url="https://t.me/QuickPlayGameBot/snakegame")
-            ]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.message.edit_text("Anda telah menyertai Snake Game! Klik untuk bermain:", reply_markup=reply_markup)
-
-        elif query.data == 'join_memory' and game == 'memory':
-            update_playing_message(chat_id, "memory", user_name, context)
-            keyboard = [[
-                InlineKeyboardButton("🧠 Main Memory Match",
-                                    url="https://t.me/QuickPlayGameBot/memorymatch")
-            ]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.message.edit_text("Anda telah menyertai Memory Match! Klik untuk bermain:", reply_markup=reply_markup)
-
-        # Kosongkan user_data selepas diproses
-        context.user_data.clear()
-    except Exception as e:
-        query.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
 # /help command
 def help_command(update: Update, context: CallbackContext):
@@ -251,7 +179,6 @@ def main():
         dp.add_handler(CommandHandler("snakegame", snakegame))
         dp.add_handler(CommandHandler("memorymatch", memorymatch))
         dp.add_handler(CommandHandler("help", help_command))
-        dp.add_handler(CallbackQueryHandler(handle_callback))
         dp.add_handler(
             MessageHandler(Filters.text & Filters.entity("mention"),
                            mention_reply))
