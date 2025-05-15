@@ -54,12 +54,12 @@ def play(update: Update, context: CallbackContext):
         keyboard = [[
             InlineKeyboardButton(
                 "🎮 Memory Match",
-                url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
+                url=f"https://t.me/QuickPlayGameBot/memorymatch?group_id={chat_id}")
         ],
                     [
                         InlineKeyboardButton(
                             "🐍 Snake Game",
-                            url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
+                            url=f"http://t.me/QuickPlayGameBot/snakegame?group_id={chat_id}")
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
@@ -101,7 +101,7 @@ def snakegame(update: Update, context: CallbackContext):
 
         keyboard = [[
             InlineKeyboardButton("🐍 Main Snake Game",
-                                url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
+                                url=f"http://t.me/QuickPlayGameBot/snakegame?group_id={chat_id}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Snake Game!",
@@ -124,7 +124,7 @@ def memorymatch(update: Update, context: CallbackContext):
 
         keyboard = [[
             InlineKeyboardButton("🧠 Main Memory Match",
-                                url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
+                                url=f"https://t.me/QuickPlayGameBot/memorymatch?group_id={chat_id}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Memory Match!",
@@ -156,7 +156,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🐍 Main Snake Game",
-                        url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
+                        url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={chat_id}")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Snake Game!",
@@ -166,7 +166,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🧠 Main Memory Match",
-                        url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
+                        url=f"https://t.me/QuickPlayGameBot/memorymatch?group_id={chat_id}")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Memory Match!",
