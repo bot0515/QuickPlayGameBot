@@ -29,7 +29,7 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# /start command (paparkan senarai arahan)
+# /start command
 def start(update: Update, context: CallbackContext):
     try:
         help_text = ("📌 *Senarai Arahan Tersedia:*\n"
@@ -41,18 +41,25 @@ def start(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# /play command (pilih permainan dengan butang)
+# /play command
 def play(update: Update, context: CallbackContext):
     try:
+        chat_id = update.effective_chat.id
+        chat_type = update.effective_chat.type
+
+        if chat_type not in ["group", "supergroup"]:
+            update.message.reply_text("Arahan ini hanya boleh digunakan dalam kumpulan.")
+            return
+
         keyboard = [[
             InlineKeyboardButton(
                 "🎮 Memory Match",
-                url="https://t.me/QuickPlayGameBot/memorymatch")
+                url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
         ],
                     [
                         InlineKeyboardButton(
                             "🐍 Snake Game",
-                            url="https://t.me/QuickPlayGameBot/snakegame")
+                            url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
@@ -64,9 +71,9 @@ def play(update: Update, context: CallbackContext):
 def is_bot_admin(update: Update, context: CallbackContext) -> bool:
     try:
         chat = update.effective_chat
-        if chat.type not in ["group", "supergroup", "channel"]:
+        if chat.type not in ["group", "supergroup"]:
             update.message.reply_text(
-                "Arahan ini hanya boleh digunakan dalam group atau channel.")
+                "Arahan ini hanya boleh digunakan dalam group.")
             return False
         bot_member: ChatMember = context.bot.get_chat_member(
             chat.id, context.bot.id)
@@ -85,9 +92,16 @@ def snakegame(update: Update, context: CallbackContext):
         return
 
     try:
+        chat_id = update.effective_chat.id
+        chat_type = update.effective_chat.type
+
+        if chat_type not in ["group", "supergroup"]:
+            update.message.reply_text("Arahan ini hanya boleh digunakan dalam kumpulan.")
+            return
+
         keyboard = [[
             InlineKeyboardButton("🐍 Main Snake Game",
-                                url="https://t.me/QuickPlayGameBot/snakegame")
+                                url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Snake Game!",
@@ -101,9 +115,16 @@ def memorymatch(update: Update, context: CallbackContext):
         return
 
     try:
+        chat_id = update.effective_chat.id
+        chat_type = update.effective_chat.type
+
+        if chat_type not in ["group", "supergroup"]:
+            update.message.reply_text("Arahan ini hanya boleh digunakan dalam kumpulan.")
+            return
+
         keyboard = [[
             InlineKeyboardButton("🧠 Main Memory Match",
-                                url="https://t.me/QuickPlayGameBot/memorymatch")
+                                url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Memory Match!",
@@ -130,11 +151,12 @@ def mention_reply(update: Update, context: CallbackContext):
         bot_username = f"@{context.bot.username.lower()}"
 
         if bot_username in text:
+            chat_id = update.effective_chat.id
             if "snake game" in text:
                 keyboard = [[
                     InlineKeyboardButton(
                         "🐍 Main Snake Game",
-                        url="https://t.me/QuickPlayGameBot/snakegame")
+                        url=f"https://your-web-app-domain.com/snakegame?group_id={chat_id}")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Snake Game!",
@@ -144,7 +166,7 @@ def mention_reply(update: Update, context: CallbackContext):
                 keyboard = [[
                     InlineKeyboardButton(
                         "🧠 Main Memory Match",
-                        url="https://t.me/QuickPlayGameBot/memorymatch")
+                        url=f"https://your-web-app-domain.com/memorymatch?group_id={chat_id}")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Memory Match!",
