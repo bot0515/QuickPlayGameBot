@@ -1,15 +1,73 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
-from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
-from flask import Flask, request, jsonify
-from threading import Thread
-import os
+from flask import Flask, request, jsonify, render_template_string
+from telegram.ext import Application, CommandHandler
 import requests
+import threading
 
 app = Flask(__name__)
 
-# Global variables to store group info
+# Variabel global untuk menyimpan group ID dan nama grup
 group_id = None
 group_name = None
+
+# HTML template sebagai string
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Group ID Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #groupId, #groupName {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Telegram Group Info</h1>
+        <p>Group ID will be displayed here:</p>
+        <div id="groupId">Waiting for Group ID...</div>
+        <p>Group Name will be displayed here:</p>
+        <div id="groupName">Waiting for Group Name...</div>
+    </div>
+
+    <script>
+        // Fungsi untuk mengambil group ID dan nama grup dari backend server
+        async function fetchGroupInfo() {
+            const response = await fetch('/get_group_info');
+            const data = await response.json();
+            document.getElementById('groupId').textContent = data.group_id;
+            document.getElementById('groupName').textContent = data.group_name;
+        }
+
+        // Panggil fungsi fetchGroupInfo saat halaman dimuat
+        fetchGroupInfo();
+    </script>
+</body>
+</html>
+"""
+
+@app.route('/')
+def home():
+    return render_template_string(HTML_TEMPLATE)
 
 @app.route('/update_group_info', methods=['POST'])
 def update_group_info():
@@ -24,160 +82,20 @@ def get_group_info():
     global group_id, group_name
     return jsonify({"group_id": group_id, "group_name": group_name})
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    try:
-        update = Update.de_json(request.get_json(), bot)
-        application.process_update(update)
-        return "OK"
-    except Exception as e:
-        print(f"Webhook error: {e}")
-        return "Error", 500
+async def start(update, context):
+    chat_id = update.effective_chat.id
+    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
+    await update.message.reply_text(f'Group ID: {chat_id}, Group Name: {chat_name}')
 
-def run():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    # Kirim group ID dan nama grup ke backend server
+    response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat_id, 'group_name': chat_name})
+    if response.status_code == 200:
+        print("Group info sent to server successfully.")
+    else:
+        print("Failed to send Group info to server.")
 
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-async def start(update: Update, context: CallbackContext) -> None:
-    try:
-        chat = update.effective_chat
-        global group_id, group_name
-        group_id = chat.id
-        group_name = chat.title
-
-        # Send group info to Flask server
-        response = requests.post('http://127.0.0.1:8080/update_group_info', json={'group_id': group_id, 'group_name': group_name})
-        if response.status_code != 200:
-            print("Failed to send group info to server.")
-
-        help_text = ("📌 *Senarai Arahan Tersedia:*\n"
-                     "/play - Pilih game secara button\n"
-                     "/snakegame - Main Snake Game dalam group\n"
-                     "/memorymatch - Main Memory Match dalam group\n"
-                     "/help - Lihat semua arahan")
-        await update.message.reply_text(help_text, parse_mode="Markdown")
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-async def play(update: Update, context: CallbackContext) -> None:
-    try:
-        keyboard = [[
-            InlineKeyboardButton(
-                "🎮 Memory Match",
-                url="https://t.me/QuickPlayGameBot/memorymatch")
-        ],
-                    [
-                        InlineKeyboardButton(
-                            "🐍 Snake Game",
-                            url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={update.effective_chat.id}&group_name={update.effective_chat.title}")
-                    ]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
-                                        reply_markup=reply_markup)
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-async def is_bot_admin(update: Update, context: CallbackContext) -> bool:
-    try:
-        chat = update.effective_chat
-        if chat.type not in ["group", "supergroup", "channel"]:
-            await update.message.reply_text(
-                "Arahan ini hanya boleh digunakan dalam group atau channel.")
-            return False
-        bot_member = await context.bot.get_chat_member(chat.id, context.bot.id)
-        if bot_member.status not in ["administrator", "creator"]:
-            await update.message.reply_text(
-                "Saya perlu menjadi admin dalam group ini untuk berfungsi.")
-            return False
-        return True
-    except Exception as e:
-        await update.message.reply_text("Ralat semasa memeriksa status admin. Sila pastikan bot mempunyai kebenaran yang diperlukan.")
-        return False
-
-async def snakegame(update: Update, context: CallbackContext) -> None:
-    if not await is_bot_admin(update, context):
-        return
-
-    try:
-        chat = update.effective_chat
-        group_id = chat.id
-        group_name = chat.title
-
-        keyboard = [[
-            InlineKeyboardButton(
-                "🐍 Main Snake Game",
-                url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
-        ]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Klik untuk bermain Snake Game!",
-                                        reply_markup=reply_markup)
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-async def memorymatch(update: Update, context: CallbackContext) -> None:
-    if not await is_bot_admin(update, context):
-        return
-
-    try:
-        keyboard = [[
-            InlineKeyboardButton(
-                "🧠 Main Memory Match",
-                url="https://t.me/QuickPlayGameBot/memorymatch")
-        ]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Klik untuk bermain Memory Match!",
-                                        reply_markup=reply_markup)
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-async def help_command(update: Update, context: CallbackContext) -> None:
-    try:
-        help_text = ("📌 *Senarai Arahan Tersedia:*\n"
-                     "/play - Pilih game secara button\n"
-                     "/snakegame - Main Snake Game dalam group\n"
-                     "/memorymatch - Main Memory Match dalam group\n"
-                     "/help - Lihat semua arahan")
-        await update.message.reply_text(help_text, parse_mode="Markdown")
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
-
-async def mention_reply(update: Update, context: CallbackContext) -> None:
-    try:
-        text = update.message.text.lower()
-        bot_username = f"@{context.bot.username.lower()}"
-
-        if bot_username in text:
-            if "snake game" in text:
-                chat = update.effective_chat
-                group_id = chat.id
-                group_name = chat.title
-
-                keyboard = [[
-                    InlineKeyboardButton(
-                        "🐍 Main Snake Game",
-                        url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
-                ]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.message.reply_text("Klik di bawah untuk main Snake Game!",
-                                                reply_markup=reply_markup)
-
-            elif "memory match" in text:
-                keyboard = [[
-                    InlineKeyboardButton(
-                        "🧠 Main Memory Match",
-                        url="https://t.me/QuickPlayGameBot/memorymatch")
-                ]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.message.reply_text("Klik di bawah untuk main Memory Match!",
-                                                reply_markup=reply_markup)
-            else:
-                await update.message.reply_text(
-                    "Saya sedia membantu! Taip /help untuk lihat arahan yang ada.")
-    except Exception as e:
-        await update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
+def run_flask_app():
+    app.run(host='0.0.0.0', port=5000)
 
 def main():
     try:
