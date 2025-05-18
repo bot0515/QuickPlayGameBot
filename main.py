@@ -154,6 +154,18 @@ async def memorymatch(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('Klik untuk bermain Memory Match:', reply_markup=reply_markup)
 
+async def play(update, context):
+    chat = update.effective_chat
+    snake_game_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/snakegame")
+    memory_match_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/memorymatch")
+
+    keyboard = [
+        [InlineKeyboardButton("🐍 Snake Game", url=snake_game_url)],
+        [InlineKeyboardButton("🎮 Memory Match", url=memory_match_url)]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Pilih permainan yang anda mahu mainkan:', reply_markup=reply_markup)
+
 def run_flask_app():
     app.run(host='0.0.0.0', port=5000)
 
@@ -177,6 +189,7 @@ def main():
         application.add_handler(CommandHandler("snakegame", snakegame))
         application.add_handler(CommandHandler("memorymatch", memorymatch))
         application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(CommandHandler("play", play))
 
         # Run Flask in a separate thread
         threading.Thread(target=run_flask_app).start()
