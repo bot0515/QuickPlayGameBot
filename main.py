@@ -8,11 +8,11 @@ import os
 
 app = Flask(__name__)
 
-# Variabel global untuk menyimpan group ID dan nama grup
+# Global variables to store group ID and name
 group_id = None
 group_name = None
 
-# HTML template sebagai string
+# HTML template as a string
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -82,13 +82,65 @@ def get_group_info():
     global group_id, group_name
     return jsonify({"group_id": group_id, "group_name": group_name})
 
+def starts_with_symbol_or_emoji(name):
+    # Check if the name starts with a symbol or emoji
+    return bool(re.match(r'^[^\w\s]', name))
+
 async def start(update, context):
-    message = "📌 Senarai Arahan Tersedia:\n" \
-              "/play - Pilih game secara button\n" \
-              "/snakegame - Main Snake Game dalam group\n" \
-              "/memorymatch - Main Memory Match dalam group\n" \
-              "/help - Lihat semua arahan"
-    await update.message.reply_text(message)
+    chat = update.effective_chat
+    user = update.effective_user
+
+    # URL for the web app inline
+    WEB_APP_URL = "https://t.me/QuickPlayGameBot/snakegame"
+
+    # Create an inline keyboard with a URL button
+    if chat.type in ['group', 'supergroup']:
+        group_name = chat.title or "Unknown Group"
+        print(f"Original group name: {group_name}")  # Log original group name
+
+        if starts_with_symbol_or_emoji(group_name):
+            # Use the group's ID in the URL if the group name starts with a symbol or emoji
+            url = f"{WEB_APP_URL}?startapp={chat.id}&group_name={group_name}"
+        else:
+            # Remove spaces from the group name
+            modified_group_name = group_name.replace(" ", "")
+            # Use the modified group name in the URL
+            url = f"{WEB_APP_URL}?startapp={modified_group_name}&{chat.id}"
+
+        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        # Send group info to the backend
+        response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat.id, 'group_name': chat.title})
+        if response.status_code == 200:
+            print("Group info sent to server successfully.")
+        else:
+            print("Failed to send Group info to server.")
+
+        await update.message.reply_text("Group info disimpan ke Firebase!", reply_markup=reply_markup)
+    elif chat.type == 'private':
+        # Use the user's ID directly in the URL for private chats
+        url = f"{WEB_APP_URL}?startapp={user.id}"
+        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        username = user.username if user.username else f"user_{user.id}"
+        # Send user info to the backend
+        response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': user.id, 'group_name': username})
+        if response.status_code == 200:
+            print("User info sent to server successfully.")
+        else:
+            print("Failed to send User info to server.")
+
+        await update.message.reply_text(
+            f"Private chat info disimpan ke Firebase!\nUsername: {username}\nUser ID: {user.id}",
+            reply_markup=reply_markup
+        )
+    else:
+        url = f"{WEB_APP_URL}?startapp=Unknown"
+        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("Bot ini hanya simpan data dari group atau private chat.", reply_markup=reply_markup)
 
 async def help_command(update, context):
     message = "📌 Senarai Arahan Tersedia:\n" \
@@ -138,7 +190,7 @@ def main():
         application.add_handler(CommandHandler("memorymatch", memorymatch))
         application.add_handler(CommandHandler("help", help_command))
 
-        # Jalankan Flask dalam thread berasingan
+        # Run Flask in a separate thread
         threading.Thread(target=run_flask_app).start()
 
         webhook_url = f"https://{render_url}/webhook"
