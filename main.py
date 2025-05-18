@@ -133,7 +133,7 @@ async def start(update, context):
             print("Failed to send User info to server.")
 
         await update.message.reply_text(
-            f"Private chat info disimpan ke Firebase!\nUsername: {username}\nUser ID: {user.id}",
+            f"Click the button below to play",
             reply_markup=reply_markup
         )
     else:
