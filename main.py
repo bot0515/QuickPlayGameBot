@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
-from telegram import Bot
+from telegram import Bot, InlineKeyboardMarkup, InlineKeyboardButton
 import requests
 import threading
 import re
@@ -83,22 +83,36 @@ def get_group_info():
     return jsonify({"group_id": group_id, "group_name": group_name})
 
 async def start(update, context):
-    chat_id = update.effective_chat.id
-    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
-    await update.message.reply_text(f'Group ID: {chat_id}, Group Name: {chat_name}')
+    message = "📌 Senarai Arahan Tersedia:\n" \
+              "/play - Pilih game secara button\n" \
+              "/snakegame - Main Snake Game dalam group\n" \
+              "/memorymatch - Main Memory Match dalam group\n" \
+              "/help - Lihat semua arahan"
+    await update.message.reply_text(message)
 
-    # Hantar info ke backend
-    response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat_id, 'group_name': chat_name})
-    if response.status_code == 200:
-        print("Group info sent to server successfully.")
-    else:
-        print("Failed to send Group info to server.")
+async def help_command(update, context):
+    message = "📌 Senarai Arahan Tersedia:\n" \
+              "/play - Pilih game secara button\n" \
+              "/snakegame - Main Snake Game dalam group\n" \
+              "/memorymatch - Main Memory Match dalam group\n" \
+              "/help - Lihat semua arahan"
+    await update.message.reply_text(message)
 
 async def snakegame(update, context):
     chat_id = update.effective_chat.id
     chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
     url = f"https://t.me/QuickPlayGameBot/snakegame?startapp={chat_name}&chat_id={chat_id}"
-    await update.message.reply_text(f'Click here to play Snake Game: {url}')
+    keyboard = [[InlineKeyboardButton("Play Snake Game", url=url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Click the button below to play Snake Game:', reply_markup=reply_markup)
+
+async def memorymatch(update, context):
+    chat_id = update.effective_chat.id
+    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
+    url = f"https://t.me/QuickPlayGameBot/memorymatch?startapp={chat_name}&chat_id={chat_id}"
+    keyboard = [[InlineKeyboardButton("Play Memory Match", url=url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Click the button below to play Memory Match:', reply_markup=reply_markup)
 
 def run_flask_app():
     app.run(host='0.0.0.0', port=5000)
@@ -121,12 +135,8 @@ def main():
 
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("snakegame", snakegame))
-
-        # Optional - letak fungsi jika anda ada
-        # application.add_handler(CommandHandler("play", play))
-        # application.add_handler(CommandHandler("memorymatch", memorymatch))
-        # application.add_handler(CommandHandler("help", help_command))
-        # application.add_handler(MessageHandler(filters.Regex(f"(?:@)({bot.username})", flags=re.IGNORECASE), mention_reply))
+        application.add_handler(CommandHandler("memorymatch", memorymatch))
+        application.add_handler(CommandHandler("help", help_command))
 
         # Jalankan Flask dalam thread berasingan
         threading.Thread(target=run_flask_app).start()
