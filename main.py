@@ -1,7 +1,10 @@
+import os  # <-- Tambahan penting
 from flask import Flask, request, jsonify, render_template_string
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram import Bot
 import requests
 import threading
+import re
 
 app = Flask(__name__)
 
@@ -50,15 +53,12 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
-        // Fungsi untuk mengambil group ID dan nama grup dari backend server
         async function fetchGroupInfo() {
             const response = await fetch('/get_group_info');
             const data = await response.json();
             document.getElementById('groupId').textContent = data.group_id;
             document.getElementById('groupName').textContent = data.group_name;
         }
-
-        // Panggil fungsi fetchGroupInfo saat halaman dimuat
         fetchGroupInfo();
     </script>
 </body>
@@ -87,7 +87,7 @@ async def start(update, context):
     chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
     await update.message.reply_text(f'Group ID: {chat_id}, Group Name: {chat_name}')
 
-    # Kirim group ID dan nama grup ke backend server
+    # Hantar info ke backend
     response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat_id, 'group_name': chat_name})
     if response.status_code == 200:
         print("Group info sent to server successfully.")
@@ -114,14 +114,16 @@ def main():
         application = Application.builder().token(TOKEN).build()
 
         application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("play", play))
-        application.add_handler(CommandHandler("snakegame", snakegame))
-        application.add_handler(CommandHandler("memorymatch", memorymatch))
-        application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(
-            MessageHandler(filters.Regex(f"(?:@)({bot.username})", flags=re.IGNORECASE), mention_reply))
 
-        keep_alive()
+        # Optional - letak fungsi jika anda ada
+        # application.add_handler(CommandHandler("play", play))
+        # application.add_handler(CommandHandler("snakegame", snakegame))
+        # application.add_handler(CommandHandler("memorymatch", memorymatch))
+        # application.add_handler(CommandHandler("help", help_command))
+        # application.add_handler(MessageHandler(filters.Regex(f"(?:@)({bot.username})", flags=re.IGNORECASE), mention_reply))
+
+        # Jalankan Flask dalam thread berasingan
+        threading.Thread(target=run_flask_app).start()
 
         webhook_url = f"https://{render_url}/webhook"
         print(f"Setting webhook to: {webhook_url}")
