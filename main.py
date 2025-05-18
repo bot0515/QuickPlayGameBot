@@ -86,6 +86,24 @@ def starts_with_symbol_or_emoji(name):
     # Check if the name starts with a symbol or emoji
     return bool(re.match(r'^[^\w\s]', name))
 
+def get_modified_url(chat, base_url):
+    if chat.type in ['group', 'supergroup']:
+        group_name = chat.title or "Unknown Group"
+        if starts_with_symbol_or_emoji(group_name):
+            # Use the group's ID in the URL if the group name starts with a symbol or emoji
+            url = f"{base_url}?startapp={chat.id}&group_name={group_name}"
+        else:
+            # Remove spaces from the group name
+            modified_group_name = group_name.replace(" ", "")
+            # Use the modified group name in the URL
+            url = f"{base_url}?startapp={modified_group_name}&{chat.id}"
+    elif chat.type == 'private':
+        # Use the user's ID directly in the URL for private chats
+        url = f"{base_url}?startapp={chat.id}"
+    else:
+        url = f"{base_url}?startapp=Unknown"
+    return url
+
 async def start(update, context):
     chat = update.effective_chat
     user = update.effective_user
@@ -94,53 +112,23 @@ async def start(update, context):
     WEB_APP_URL = "https://t.me/QuickPlayGameBot/snakegame"
 
     # Create an inline keyboard with a URL button
-    if chat.type in ['group', 'supergroup']:
-        group_name = chat.title or "Unknown Group"
-        print(f"Original group name: {group_name}")  # Log original group name
+    url = get_modified_url(chat, WEB_APP_URL)
+    keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-        if starts_with_symbol_or_emoji(group_name):
-            # Use the group's ID in the URL if the group name starts with a symbol or emoji
-            url = f"{WEB_APP_URL}?startapp={chat.id}&group_name={group_name}"
-        else:
-            # Remove spaces from the group name
-            modified_group_name = group_name.replace(" ", "")
-            # Use the modified group name in the URL
-            url = f"{WEB_APP_URL}?startapp={modified_group_name}&{chat.id}"
-
-        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        # Send group info to the backend
-        response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat.id, 'group_name': chat.title})
-        if response.status_code == 200:
-            print("Group info sent to server successfully.")
-        else:
-            print("Failed to send Group info to server.")
-
-        await update.message.reply_text("Group info disimpan ke Firebase!", reply_markup=reply_markup)
-    elif chat.type == 'private':
-        # Use the user's ID directly in the URL for private chats
-        url = f"{WEB_APP_URL}?startapp={user.id}"
-        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        username = user.username if user.username else f"user_{user.id}"
-        # Send user info to the backend
-        response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': user.id, 'group_name': username})
-        if response.status_code == 200:
-            print("User info sent to server successfully.")
-        else:
-            print("Failed to send User info to server.")
-
-        await update.message.reply_text(
-            f"Click the button below to play",
-            reply_markup=reply_markup
-        )
+    # Send group info to the backend
+    response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat.id, 'group_name': chat.title})
+    if response.status_code == 200:
+        print("Group info sent to server successfully.")
     else:
-        url = f"{WEB_APP_URL}?startapp=Unknown"
-        keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Bot ini hanya simpan data dari group atau private chat.", reply_markup=reply_markup)
+        print("Failed to send Group info to server.")
+
+    message = "📌 Senarai Arahan Tersedia:\n" \
+              "/play - Pilih game secara button\n" \
+              "/snakegame - Main Snake Game dalam group\n" \
+              "/memorymatch - Main Memory Match dalam group\n" \
+              "/help - Lihat semua arahan"
+    await update.message.reply_text(message, reply_markup=reply_markup)
 
 async def help_command(update, context):
     message = "📌 Senarai Arahan Tersedia:\n" \
@@ -151,20 +139,20 @@ async def help_command(update, context):
     await update.message.reply_text(message)
 
 async def snakegame(update, context):
-    chat_id = update.effective_chat.id
-    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
-    url = f"https://t.me/QuickPlayGameBot/snakegame?startapp={chat_name}&chat_id={chat_id}"
+    chat = update.effective_chat
+    WEB_APP_URL = "https://t.me/QuickPlayGameBot/snakegame"
+    url = get_modified_url(chat, WEB_APP_URL)
     keyboard = [[InlineKeyboardButton("Play Snake Game", url=url)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Click the button below to play Snake Game:', reply_markup=reply_markup)
+    await update.message.reply_text('Klik untuk bermain Snake Game:', reply_markup=reply_markup)
 
 async def memorymatch(update, context):
-    chat_id = update.effective_chat.id
-    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
-    url = f"https://t.me/QuickPlayGameBot/memorymatch?startapp={chat_name}&chat_id={chat_id}"
+    chat = update.effective_chat
+    WEB_APP_URL = "https://t.me/QuickPlayGameBot/memorymatch"
+    url = get_modified_url(chat, WEB_APP_URL)
     keyboard = [[InlineKeyboardButton("Play Memory Match", url=url)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Click the button below to play Memory Match:', reply_markup=reply_markup)
+    await update.message.reply_text('Klik untuk bermain Memory Match:', reply_markup=reply_markup)
 
 def run_flask_app():
     app.run(host='0.0.0.0', port=5000)
