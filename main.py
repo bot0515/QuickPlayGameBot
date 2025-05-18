@@ -108,14 +108,6 @@ async def start(update, context):
     chat = update.effective_chat
     user = update.effective_user
 
-    # URL for the web app inline
-    WEB_APP_URL = "https://t.me/QuickPlayGameBot/snakegame"
-
-    # Create an inline keyboard with a URL button
-    url = get_modified_url(chat, WEB_APP_URL)
-    keyboard = [[InlineKeyboardButton("Open Link", url=url)]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     # Send group info to the backend
     response = requests.post('http://127.0.0.1:5000/update_group_info', json={'group_id': chat.id, 'group_name': chat.title})
     if response.status_code == 200:
