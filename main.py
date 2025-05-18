@@ -1,10 +1,10 @@
-import os  # <-- Tambahan penting
 from flask import Flask, request, jsonify, render_template_string
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from telegram import Bot
 import requests
 import threading
 import re
+import os
 
 app = Flask(__name__)
 
@@ -94,6 +94,12 @@ async def start(update, context):
     else:
         print("Failed to send Group info to server.")
 
+async def snakegame(update, context):
+    chat_id = update.effective_chat.id
+    chat_name = update.effective_chat.title if update.effective_chat.title else "Private Chat"
+    url = f"https://t.me/QuickPlayGameBot/snakegame?startapp={chat_name}&chat_id={chat_id}"
+    await update.message.reply_text(f'Click here to play Snake Game: {url}')
+
 def run_flask_app():
     app.run(host='0.0.0.0', port=5000)
 
@@ -114,10 +120,10 @@ def main():
         application = Application.builder().token(TOKEN).build()
 
         application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("snakegame", snakegame))
 
         # Optional - letak fungsi jika anda ada
         # application.add_handler(CommandHandler("play", play))
-        # application.add_handler(CommandHandler("snakegame", snakegame))
         # application.add_handler(CommandHandler("memorymatch", memorymatch))
         # application.add_handler(CommandHandler("help", help_command))
         # application.add_handler(MessageHandler(filters.Regex(f"(?:@)({bot.username})", flags=re.IGNORECASE), mention_reply))
