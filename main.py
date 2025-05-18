@@ -1,16 +1,88 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher, CallbackQueryHandler
-from flask import Flask, request
+from flask import Flask, request, jsonify, render_template_string
 from threading import Thread
 import os
 from telegram import ParseMode
 from telegram import Bot
+import requests
 
 app = Flask('')
 
+# Global variables to store group info
+group_id = None
+group_name = None
+
+# HTML template to display group info
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Group ID Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #groupId, #groupName {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Telegram Group Info</h1>
+        <p>Group ID will be displayed here:</p>
+        <div id="groupId">Waiting for Group ID...</div>
+        <p>Group Name will be displayed here:</p>
+        <div id="groupName">Waiting for Group Name...</div>
+    </div>
+
+    <script>
+        async function fetchGroupInfo() {
+            const response = await fetch('/get_group_info');
+            const data = await response.json();
+            document.getElementById('groupId').textContent = data.group_id;
+            document.getElementById('groupName').textContent = data.group_name;
+        }
+
+        fetchGroupInfo();
+    </script>
+</body>
+</html>
+"""
+
 @app.route('/')
 def home():
-    return "Bot sedang berjalan."
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/update_group_info', methods=['POST'])
+def update_group_info():
+    global group_id, group_name
+    data = request.json
+    group_id = data.get('group_id')
+    group_name = data.get('group_name')
+    return jsonify({"status": "success"})
+
+@app.route('/get_group_info', methods=['GET'])
+def get_group_info():
+    global group_id, group_name
+    return jsonify({"group_id": group_id, "group_name": group_name})
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -29,9 +101,17 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# /start command (paparkan senarai arahan)
 def start(update: Update, context: CallbackContext):
     try:
+        chat = update.effective_chat
+        group_id = chat.id
+        group_name = chat.title
+
+        # Send group info to Flask server
+        response = requests.post('http://127.0.0.1:8080/update_group_info', json={'group_id': group_id, 'group_name': group_name})
+        if response.status_code != 200:
+            print("Failed to send group info to server.")
+
         help_text = ("📌 *Senarai Arahan Tersedia:*\n"
                      "/play - Pilih game secara button\n"
                      "/snakegame - Main Snake Game dalam group\n"
@@ -41,7 +121,6 @@ def start(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# /play command (pilih permainan dengan butang)
 def play(update: Update, context: CallbackContext):
     try:
         keyboard = [[
@@ -60,7 +139,6 @@ def play(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# Semak jika bot admin
 def is_bot_admin(update: Update, context: CallbackContext) -> bool:
     try:
         chat = update.effective_chat
@@ -79,7 +157,6 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
         update.message.reply_text("Ralat semasa memeriksa status admin. Sila pastikan bot mempunyai kebenaran yang diperlukan.")
         return False
 
-# /snakegame command
 def snakegame(update: Update, context: CallbackContext):
     if not is_bot_admin(update, context):
         return
@@ -99,7 +176,6 @@ def snakegame(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# /memorymatch command
 def memorymatch(update: Update, context: CallbackContext):
     if not is_bot_admin(update, context):
         return
@@ -115,7 +191,6 @@ def memorymatch(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# /help command
 def help_command(update: Update, context: CallbackContext):
     try:
         help_text = ("📌 *Senarai Arahan Tersedia:*\n"
@@ -127,7 +202,6 @@ def help_command(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# Respond bila orang mention bot
 def mention_reply(update: Update, context: CallbackContext):
     try:
         text = update.message.text.lower()
@@ -163,7 +237,6 @@ def mention_reply(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text("Ralat berlaku. Sila cuba lagi.")
 
-# Main
 def main():
     try:
         TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -174,7 +247,6 @@ def main():
         if not render_url:
             raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
 
-        # Pastikan render_url tak ada "https://" atau "http://"
         render_url = render_url.replace("https://", "").replace("http://", "")
 
         global bot, dp
@@ -193,7 +265,6 @@ def main():
 
         keep_alive()
 
-        # Set webhook dengan bot object
         webhook_url = f"https://{render_url}/webhook"
         print(f"Setting webhook to: {webhook_url}")
         response = bot.setWebhook(url=webhook_url)
