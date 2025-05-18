@@ -1,75 +1,15 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatMember
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher, CallbackQueryHandler
-from flask import Flask, request, jsonify, render_template_string
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters, Dispatcher
+from flask import Flask, request, jsonify
 from threading import Thread
 import os
-from telegram import ParseMode
-from telegram import Bot
 import requests
 
-app = Flask('')
+app = Flask(__name__)
 
 # Global variables to store group info
 group_id = None
 group_name = None
-
-# HTML template to display group info
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Group ID Display</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        #groupId, #groupName {
-            font-size: 24px;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Telegram Group Info</h1>
-        <p>Group ID will be displayed here:</p>
-        <div id="groupId">Waiting for Group ID...</div>
-        <p>Group Name will be displayed here:</p>
-        <div id="groupName">Waiting for Group Name...</div>
-    </div>
-
-    <script>
-        async function fetchGroupInfo() {
-            const response = await fetch('/get_group_info');
-            const data = await response.json();
-            document.getElementById('groupId').textContent = data.group_id;
-            document.getElementById('groupName').textContent = data.group_name;
-        }
-
-        fetchGroupInfo();
-    </script>
-</body>
-</html>
-"""
-
-@app.route('/')
-def home():
-    return render_template_string(HTML_TEMPLATE)
 
 @app.route('/update_group_info', methods=['POST'])
 def update_group_info():
@@ -104,6 +44,7 @@ def keep_alive():
 def start(update: Update, context: CallbackContext):
     try:
         chat = update.effective_chat
+        global group_id, group_name
         group_id = chat.id
         group_name = chat.title
 
@@ -131,7 +72,7 @@ def play(update: Update, context: CallbackContext):
                     [
                         InlineKeyboardButton(
                             "🐍 Snake Game",
-                            url="https://t.me/QuickPlayGameBot/snakegame")
+                            url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={update.effective_chat.id}&group_name={update.effective_chat.title}")
                     ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Pilih permainan yang anda mahu mainkan:",
@@ -146,8 +87,7 @@ def is_bot_admin(update: Update, context: CallbackContext) -> bool:
             update.message.reply_text(
                 "Arahan ini hanya boleh digunakan dalam group atau channel.")
             return False
-        bot_member: ChatMember = context.bot.get_chat_member(
-            chat.id, context.bot.id)
+        bot_member = context.bot.get_chat_member(chat.id, context.bot.id)
         if bot_member.status not in ["administrator", "creator"]:
             update.message.reply_text(
                 "Saya perlu menjadi admin dalam group ini untuk berfungsi.")
@@ -167,8 +107,9 @@ def snakegame(update: Update, context: CallbackContext):
         group_name = chat.title
 
         keyboard = [[
-            InlineKeyboardButton("🐍 Main Snake Game",
-                                url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
+            InlineKeyboardButton(
+                "🐍 Main Snake Game",
+                url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Snake Game!",
@@ -182,8 +123,9 @@ def memorymatch(update: Update, context: CallbackContext):
 
     try:
         keyboard = [[
-            InlineKeyboardButton("🧠 Main Memory Match",
-                                url="https://t.me/QuickPlayGameBot/memorymatch")
+            InlineKeyboardButton(
+                "🧠 Main Memory Match",
+                url="https://t.me/QuickPlayGameBot/memorymatch")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Memory Match!",
