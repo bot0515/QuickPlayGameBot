@@ -85,9 +85,13 @@ def snakegame(update: Update, context: CallbackContext):
         return
 
     try:
+        chat = update.effective_chat
+        group_id = chat.id
+        group_name = chat.title
+
         keyboard = [[
             InlineKeyboardButton("🐍 Main Snake Game",
-                                url="https://t.me/QuickPlayGameBot/snakegame")
+                                url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
         ]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Klik untuk bermain Snake Game!",
@@ -131,10 +135,14 @@ def mention_reply(update: Update, context: CallbackContext):
 
         if bot_username in text:
             if "snake game" in text:
+                chat = update.effective_chat
+                group_id = chat.id
+                group_name = chat.title
+
                 keyboard = [[
                     InlineKeyboardButton(
                         "🐍 Main Snake Game",
-                        url="https://t.me/QuickPlayGameBot/snakegame")
+                        url=f"https://t.me/QuickPlayGameBot/snakegame?group_id={group_id}&group_name={group_name}")
                 ]]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 update.message.reply_text("Klik di bawah untuk main Snake Game!",
@@ -165,10 +173,10 @@ def main():
         render_url = os.environ.get("RENDER_EXTERNAL_URL")
         if not render_url:
             raise ValueError("RENDER_EXTERNAL_URL tidak ditetapkan dalam environment variable")
-        
+
         # Pastikan render_url tak ada "https://" atau "http://"
         render_url = render_url.replace("https://", "").replace("http://", "")
-        
+
         global bot, dp
         bot = Bot(TOKEN)
         updater = Updater(TOKEN, use_context=True)
