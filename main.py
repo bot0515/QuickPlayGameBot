@@ -86,11 +86,19 @@ def starts_with_symbol_or_emoji(name):
     # Check if the name starts with a symbol or emoji
     return bool(re.match(r'^[^\w\s]', name))
 
+def end_with_symbol_or_emoji(name):
+    # Check if the name ends with a symbol or emoji
+    return bool(re.search(r'[^\w\s]$', name))
+
+def contains_inner_symbol_or_emoji(name):
+    # Check if the name contains any symbol or emoji in the middle
+    return bool(re.search(r'[^\w\s]', name[1:-1])) if len(name) > 2 else False
+
 def get_modified_url(chat, base_url):
     if chat.type in ['group', 'supergroup']:
         group_name = chat.title or "Unknown Group"
-        if starts_with_symbol_or_emoji(group_name):
-            # Use the group's ID in the URL if the group name starts with a symbol or emoji
+        if starts_with_symbol_or_emoji(group_name) or end_with_symbol_or_emoji(group_name) or contains_inner_symbol_or_emoji(group_name):
+            # Use the group's ID in the URL if the group name contains any symbol or emoji
             url = f"{base_url}?startapp={chat.id}&group_name={group_name}"
         else:
             # Remove spaces from the group name
