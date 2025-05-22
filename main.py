@@ -5,6 +5,7 @@ import requests
 import threading
 import re
 import os
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -85,10 +86,10 @@ def get_group_info():
 def get_modified_url(chat, base_url):
     if chat.type in ['group', 'supergroup']:
         group_name = chat.title or "Unknown Group"
-        # Always include the chat.id and group_name in the URL
-        url = f"{base_url}?group_id={chat.id}&group_name={group_name}"
+        # URL-encode the group_name to handle special characters and spaces
+        encoded_group_name = urllib.parse.quote(group_name)
+        url = f"{base_url}?group_id={chat.id}&group_name={encoded_group_name}"
     elif chat.type == 'private':
-        # Use the user's ID for private chats
         url = f"{base_url}?group_id={chat.id}&group_name=Private"
     else:
         url = f"{base_url}?group_id=Unknown&group_name=Unknown"
