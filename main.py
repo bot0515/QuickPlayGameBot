@@ -95,22 +95,22 @@ def contains_inner_symbol_or_emoji(name):
     return bool(re.search(r'[^\w\s]', name[1:-1])) if len(name) > 2 else False
 
 def get_modified_url(chat, base_url):
+    origin_chat_id = chat.id  # This is the original group
+    encoded_url = f"{base_url}?origin_chat_id={origin_chat_id}"
+    
     if chat.type in ['group', 'supergroup']:
         group_name = chat.title or "Unknown Group"
         if starts_with_symbol_or_emoji(group_name) or end_with_symbol_or_emoji(group_name) or contains_inner_symbol_or_emoji(group_name):
-            # Use the group's ID in the URL if the group name contains any symbol or emoji
-            url = f"{base_url}?startapp={chat.id}&group_name={group_name}"
+            encoded_url += f"&startapp={chat.id}&group_name={group_name}"
         else:
-            # Remove spaces from the group name
             modified_group_name = group_name.replace(" ", "")
-            # Use the modified group name in the URL
-            url = f"{base_url}?startapp={modified_group_name}&{chat.id}"
+            encoded_url += f"&startapp={modified_group_name}&{chat.id}"
     elif chat.type == 'private':
-        # Use the user's ID directly in the URL for private chats
-        url = f"{base_url}?startapp={chat.id}"
+        encoded_url += f"&startapp={chat.id}"
     else:
-        url = f"{base_url}?startapp=Unknown"
-    return url
+        encoded_url += "&startapp=Unknown"
+        
+    return encoded_url
 
 async def start(update, context):
     chat = update.effective_chat
