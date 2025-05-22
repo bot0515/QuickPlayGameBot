@@ -119,6 +119,7 @@ async def start(update, context):
               "/play - Pilih game secara button\n" \
               "/snakegame - Main Snake Game dalam group\n" \
               "/memorymatch - Main Memory Match dalam group\n" \
+              "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
               "/help - Lihat semua arahan"
     await update.message.reply_text(message, reply_markup=reply_markup)
 
@@ -127,6 +128,7 @@ async def help_command(update, context):
               "/play - Pilih game secara button\n" \
               "/snakegame - Main Snake Game dalam group\n" \
               "/memorymatch - Main Memory Match dalam group\n" \
+              "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
               "/help - Lihat semua arahan"
     await update.message.reply_text(message)
 
@@ -146,14 +148,24 @@ async def memorymatch(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('Klik untuk bermain Memory Match:', reply_markup=reply_markup)
 
+async def quicktapchallenge(update, context):
+    chat = update.effective_chat
+    WEB_APP_URL = "https://t.me/QuickPlayGameBot/quicktapchallenge"
+    url = get_modified_url(chat, WEB_APP_URL)
+    keyboard = [[InlineKeyboardButton("Play Quick Tap Challenge", url=url)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Klik untuk bermain Quick Tap Challenge:', reply_markup=reply_markup)
+
 async def play(update, context):
     chat = update.effective_chat
     snake_game_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/snakegame")
     memory_match_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/memorymatch")
+    quick_tap_challenge_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/quicktapchallenge")
 
     keyboard = [
         [InlineKeyboardButton("🐍 Snake Game", url=snake_game_url)],
-        [InlineKeyboardButton("🎮 Memory Match", url=memory_match_url)]
+        [InlineKeyboardButton("🎮 Memory Match", url=memory_match_url)],
+        [InlineKeyboardButton("⚡ Quick Tap Challenge", url=quick_tap_challenge_url)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('Pilih permainan yang anda mahu mainkan:', reply_markup=reply_markup)
@@ -180,6 +192,7 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("snakegame", snakegame))
         application.add_handler(CommandHandler("memorymatch", memorymatch))
+        application.add_handler(CommandHandler("quicktapchallenge", quicktapchallenge))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("play", play))
 
