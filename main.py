@@ -113,15 +113,15 @@ async def memorymatch(update, context):
 
 async def quicktap(update, context):
     chat = update.effective_chat
-    url = get_modified_url(chat, "https://steep-majestic-palladium.glitch.me")
+    url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/quicktapchallenge")
     keyboard = [[InlineKeyboardButton("⚡ Quick Tap Challenge", url=url)]]
-    await update.message.reply_text("Siapa paling laju tekan? Klik untuk main:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text("Klik untuk main Quick Tap Challenge:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def play(update, context):
     chat = update.effective_chat
     snake_game_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/snakegame")
     memory_match_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/memorymatch")
-    quick_tap_url = get_modified_url(chat, "https://steep-majestic-palladium.glitch.me")
+    quick_tap_url = get_modified_url(chat, "https://t.me/QuickPlayGameBot/quicktapchallenge")
 
     keyboard = [
         [InlineKeyboardButton("🐍 Snake Game", url=snake_game_url)],
