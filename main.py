@@ -5,7 +5,6 @@ import requests
 import threading
 import re
 import os
-import urllib.parse
 
 app = Flask(__name__)
 
@@ -83,16 +82,34 @@ def get_group_info():
     global group_id, group_name
     return jsonify({"group_id": group_id, "group_name": group_name})
 
+def starts_with_symbol_or_emoji(name):
+    # Check if the name starts with a symbol or emoji
+    return bool(re.match(r'^[^\w\s]', name))
+
+def end_with_symbol_or_emoji(name):
+    # Check if the name ends with a symbol or emoji
+    return bool(re.search(r'[^\w\s]$', name))
+
+def contains_inner_symbol_or_emoji(name):
+    # Check if the name contains any symbol or emoji in the middle
+    return bool(re.search(r'[^\w\s]', name[1:-1])) if len(name) > 2 else False
+
 def get_modified_url(chat, base_url):
     if chat.type in ['group', 'supergroup']:
         group_name = chat.title or "Unknown Group"
-        # URL-encode the group_name to handle special characters and spaces
-        encoded_group_name = urllib.parse.quote(group_name)
-        url = f"{base_url}?group_id={chat.id}&group_name={encoded_group_name}"
+        if starts_with_symbol_or_emoji(group_name) or end_with_symbol_or_emoji(group_name) or contains_inner_symbol_or_emoji(group_name):
+            # Use the group's ID in the URL if the group name contains any symbol or emoji
+            url = f"{base_url}?startapp={chat.id}&group_name={group_name}"
+        else:
+            # Remove spaces from the group name
+            modified_group_name = group_name.replace(" ", "")
+            # Use the modified group name in the URL
+            url = f"{base_url}?startapp={modified_group_name}&{chat.id}"
     elif chat.type == 'private':
-        url = f"{base_url}?group_id={chat.id}&group_name=Private"
+        # Use the user's ID directly in the URL for private chats
+        url = f"{base_url}?startapp={chat.id}"
     else:
-        url = f"{base_url}?group_id=Unknown&group_name=Unknown"
+        url = f"{base_url}?startapp=Unknown"
     return url
 
 async def start(update, context):
@@ -112,7 +129,7 @@ async def start(update, context):
               "/memorymatch - Main Memory Match dalam group\n" \
               "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
               "/help - Lihat semua arahan"
-    await update.message.reply_text(message)
+    await update.message.reply_text(message, reply_markup=reply_markup)
 
 async def help_command(update, context):
     message = "📌 Senarai Arahan Tersedia:\n" \
