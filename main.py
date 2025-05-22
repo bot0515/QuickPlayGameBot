@@ -82,34 +82,16 @@ def get_group_info():
     global group_id, group_name
     return jsonify({"group_id": group_id, "group_name": group_name})
 
-def starts_with_symbol_or_emoji(name):
-    # Check if the name starts with a symbol or emoji
-    return bool(re.match(r'^[^\w\s]', name))
-
-def end_with_symbol_or_emoji(name):
-    # Check if the name ends with a symbol or emoji
-    return bool(re.search(r'[^\w\s]$', name))
-
-def contains_inner_symbol_or_emoji(name):
-    # Check if the name contains any symbol or emoji in the middle
-    return bool(re.search(r'[^\w\s]', name[1:-1])) if len(name) > 2 else False
-
 def get_modified_url(chat, base_url):
     if chat.type in ['group', 'supergroup']:
         group_name = chat.title or "Unknown Group"
-        if starts_with_symbol_or_emoji(group_name) or end_with_symbol_or_emoji(group_name) or contains_inner_symbol_or_emoji(group_name):
-            # Use the group's ID in the URL if the group name contains any symbol or emoji
-            url = f"{base_url}?startapp={chat.id}&group_name={group_name}"
-        else:
-            # Remove spaces from the group name
-            modified_group_name = group_name.replace(" ", "")
-            # Use the modified group name in the URL
-            url = f"{base_url}?startapp={modified_group_name}&{chat.id}"
+        # Always include the chat.id and group_name in the URL
+        url = f"{base_url}?group_id={chat.id}&group_name={group_name}"
     elif chat.type == 'private':
-        # Use the user's ID directly in the URL for private chats
-        url = f"{base_url}?startapp={chat.id}"
+        # Use the user's ID for private chats
+        url = f"{base_url}?group_id={chat.id}&group_name=Private"
     else:
-        url = f"{base_url}?startapp=Unknown"
+        url = f"{base_url}?group_id=Unknown&group_name=Unknown"
     return url
 
 async def start(update, context):
@@ -129,7 +111,7 @@ async def start(update, context):
               "/memorymatch - Main Memory Match dalam group\n" \
               "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
               "/help - Lihat semua arahan"
-    await update.message.reply_text(message, reply_markup=reply_markup)
+    await update.message.reply_text(message)
 
 async def help_command(update, context):
     message = "📌 Senarai Arahan Tersedia:\n" \
