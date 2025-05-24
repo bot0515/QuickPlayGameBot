@@ -210,7 +210,7 @@ def main():
         application.add_handler(CommandHandler("quicktapchallenge", quicktapchallenge))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("play", play))
-        application.add_handler(CommandHandler("support admin", supportadmin_command))
+        application.add_handler(CommandHandler("supportadmin", supportadmin_command))
 
         # Run Flask in a separate thread
         threading.Thread(target=run_flask_app).start()
