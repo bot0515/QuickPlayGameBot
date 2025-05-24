@@ -129,6 +129,7 @@ async def start(update, context):
               "/memorymatch - Main Memory Match dalam group\n" \
               "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
               "/help - Lihat semua arahan"
+              "/supportadmin - Tekan ini untuk menyumbang ke admin"
     await update.message.reply_text(message, reply_markup=reply_markup)
 
 async def help_command(update, context):
@@ -137,9 +138,15 @@ async def help_command(update, context):
               "/snakegame - Main Snake Game dalam group\n" \
               "/memorymatch - Main Memory Match dalam group\n" \
               "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
-              "/help - Lihat semua arahan"
+              "/help - Lihat semua arahan\n" \
+             "/supportadmin - Tekan ini untuk menyumbang ke admin"
     await update.message.reply_text(message)
-
+    
+async def supportadmin_command(update, context):
+    message = "📌 Anda boleh buat sumbangan kepada admin melalui link ini: https://payment.tngdigital.com.my/sc/bDLnWPcKID" \
+              "Admin sangat menghargai sumbangan anda berapapun nilainya. Terima kasih berkongsi, moga segala urusan dipermudah, aamiin✨"
+    await update.message.reply_text(message)
+    
 async def snakegame(update, context):
     chat = update.effective_chat
     WEB_APP_URL = "https://t.me/QuickPlayGameBot/snakegame"
@@ -203,6 +210,7 @@ def main():
         application.add_handler(CommandHandler("quicktapchallenge", quicktapchallenge))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("play", play))
+        application.add_handler(CommandHandler("support admin", supportadmin_command))
 
         # Run Flask in a separate thread
         threading.Thread(target=run_flask_app).start()
