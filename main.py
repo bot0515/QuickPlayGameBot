@@ -143,7 +143,7 @@ async def help_command(update, context):
     await update.message.reply_text(message)
     
 async def supportadmin_command(update, context):
-    message = "📌 Anda boleh buat sumbangan kepada admin melalui link ini: https://payment.tngdigital.com.my/sc/bDLnWPcKID \n" \
+    message = "📌 Anda boleh buat sumbangan kepada admin melalui link ini: https://payment.tngdigital.com.my/sc/bDLnWPcKID. \n\n" \
               "Admin sangat menghargai sumbangan anda berapapun nilainya. Terima kasih berkongsi, moga segala urusan dipermudah, aamiin✨"
     await update.message.reply_text(message)
     
