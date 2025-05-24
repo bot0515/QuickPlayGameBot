@@ -128,7 +128,7 @@ async def start(update, context):
               "/snakegame - Main Snake Game dalam group\n" \
               "/memorymatch - Main Memory Match dalam group\n" \
               "/quicktapchallenge - Main Quick Tap Challenge dalam group\n" \
-              "/help - Lihat semua arahan"
+              "/help - Lihat semua arahan" \
               "/supportadmin - Tekan ini untuk menyumbang ke admin"
     await update.message.reply_text(message, reply_markup=reply_markup)
 
